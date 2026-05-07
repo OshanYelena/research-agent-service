@@ -1,10 +1,17 @@
 from typing import TypedDict
 
 
+class SourceState(TypedDict, total=False):
+    url: str
+    status_code: int | None
+    title: str | None
+    content: str | None
+    error: str | None
+
+
 class ResearchState(TypedDict):
     query: str
+    urls: list[str]
     search_plan: str
-    extracted_notes: list[str]
+    sources: list[SourceState]
     summary: str
-
-
