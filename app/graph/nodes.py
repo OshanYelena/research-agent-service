@@ -5,7 +5,7 @@ from app.core.logging import logger
 from app.crawler.http_client import create_async_client, fetch_html_async
 from app.crawler.extractor import extract_text_from_html
 from app.graph.state import ResearchState
-from app.crawler.summarizer import summarize_text_preview
+from app.crawler.summarizer import summarize_text_preview, build_fallback_summary
 from app.llm.client import LLMClient
 
 def create_search_plan(state: ResearchState) -> dict:
@@ -74,25 +74,39 @@ async def crawl_urls(state: ResearchState) -> dict:
 
 
 async def summarize_sources(state: ResearchState) -> dict:
+
     valid_sources = [
         source for source in state["sources"]
         if source.get("content")
     ]
 
     if not valid_sources:
+
         return {
             "summary": "No readable source content could be extracted from the provided URLs."
         }
 
-    logger.info(
-        "summarizing_sources_with_llm",
-        valid_source_count=len(valid_sources),
-    )
+    try:
 
-    llm_client = LLMClient()
-    summary = await llm_client.summarize_sources(
-        query=state["query"],
-        sources=valid_sources,
-    )
+        logger.info(
+            "summarizing_sources_with_llm",
+            valid_source_count=len(valid_sources),
+        )
 
-    return {"summary": summary}
+        llm_client = LLMClient()
+
+        summary = await llm_client.summarize_sources(
+            query=state["query"],
+            sources=valid_sources,
+        )
+        return {"summary": summary}
+
+    except Exception as exc:
+
+        logger.warning(
+            "llm_summary_failed_using_fallback",
+            error=str(exc),
+
+        )
+        fallback_summary = build_fallback_summary(valid_sources)
+        return {"summary": fallback_summary}

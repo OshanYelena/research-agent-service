@@ -34,19 +34,17 @@ Content:
             )
 
         prompt = f"""
-You are a research summarization assistant.
+You are a careful research summarization assistant.
 
 User query:
 {query}
 
-Summarize the provided sources.
-
 Rules:
 - Only use the provided source content.
 - Do not invent facts.
-- Mention source numbers like [1], [2] when making claims.
-- If sources are weak or incomplete, say so.
-- Give a concise but useful answer.
+- Use citations like [1], [2].
+- If the sources are weak, incomplete, or unrelated, say so.
+- Keep the answer concise and useful.
 
 Sources:
 {chr(10).join(source_blocks)}
