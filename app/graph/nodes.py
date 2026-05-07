@@ -6,6 +6,7 @@ from app.crawler.http_client import create_async_client, fetch_html_async
 from app.crawler.extractor import extract_text_from_html
 from app.graph.state import ResearchState
 from app.crawler.summarizer import summarize_text_preview
+from app.llm.client import LLMClient
 
 def create_search_plan(state: ResearchState) -> dict:
     query = state["query"]
@@ -72,7 +73,7 @@ async def crawl_urls(state: ResearchState) -> dict:
     return {"sources": sources}
 
 
-def summarize_sources(state: ResearchState) -> dict:
+async def summarize_sources(state: ResearchState) -> dict:
     valid_sources = [
         source for source in state["sources"]
         if source.get("content")
@@ -83,21 +84,15 @@ def summarize_sources(state: ResearchState) -> dict:
             "summary": "No readable source content could be extracted from the provided URLs."
         }
 
-    summary_parts = []
-
-    for index, source in enumerate(valid_sources, start=1):
-        title = source.get("title") or source["url"]
-        source_summary = source.get("source_summary") or ""
-
-        summary_parts.append(
-            f"[{index}] {title}: {source_summary}"
-        )
-
-    summary = "\n\n".join(summary_parts)
-
     logger.info(
-        "summarized_sources",
+        "summarizing_sources_with_llm",
         valid_source_count=len(valid_sources),
+    )
+
+    llm_client = LLMClient()
+    summary = await llm_client.summarize_sources(
+        query=state["query"],
+        sources=valid_sources,
     )
 
     return {"summary": summary}

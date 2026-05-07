@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     CRAWLER_USER_AGENT: str = "ResearchAgentService/0.1"
     CRAWLER_MAX_CONCURRENCY: int = 3
 
+    OPENAI_API_KEY: str | None = None
+    LLM_MODEL: str
+    LLM_MAX_INPUT_CHARS: int = 12_000
+
 
     model_config = SettingsConfigDict(
         env_file=".env",
