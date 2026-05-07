@@ -1,9 +1,12 @@
 from pydantic import BaseModel, Field, HttpUrl
-
+from app.core.config import settings
 
 class ResearchRequest(BaseModel):
     query: str = Field(..., min_length=3, max_length=500)
-    urls: list[HttpUrl] = Field(default_factory=list, max_length=5)
+    urls: list[HttpUrl] = Field(
+        default_factory=list,
+        max_length=settings.CRAWLER_MAX_URLS,
+    )
 
 
 class SourceResult(BaseModel):

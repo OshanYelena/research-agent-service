@@ -1,20 +1,20 @@
 import httpx
 
+from app.core.config import settings
 from app.core.logging import logger
 
 
-DEFAULT_HEADERS = {
-    "User-Agent": "ResearchAgentService/0.1 (+https://example.com/bot)"
-}
+def fetch_html(url: str) -> tuple[int | None, str | None, str | None]:
+    headers = {
+        "User-Agent": settings.CRAWLER_USER_AGENT
+    }
 
-
-def fetch_html(url: str, timeout: float = 10.0) -> tuple[int | None, str | None, str | None]:
     try:
         logger.info("fetching_url", url=url)
 
         with httpx.Client(
-            headers=DEFAULT_HEADERS,
-            timeout=timeout,
+            headers=headers,
+            timeout=settings.CRAWLER_TIMEOUT_SECONDS,
             follow_redirects=True,
         ) as client:
             response = client.get(url)
@@ -26,7 +26,9 @@ def fetch_html(url: str, timeout: float = 10.0) -> tuple[int | None, str | None,
 
         response.raise_for_status()
 
-        return response.status_code, response.text, None
+        html = response.text[: settings.CRAWLER_MAX_CONTENT_CHARS]
+
+        return response.status_code, html, None
 
     except httpx.TimeoutException:
         logger.warning("fetch_timeout", url=url)

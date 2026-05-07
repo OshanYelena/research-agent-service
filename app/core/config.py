@@ -8,6 +8,12 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
 
+    CRAWLER_TIMEOUT_SECONDS: float = 10.0
+    CRAWLER_MAX_URLS: int = 5
+    CRAWLER_MAX_CONTENT_CHARS: int = 50_000
+    CRAWLER_USER_AGENT: str = "ResearchAgentService/0.1"
+
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
