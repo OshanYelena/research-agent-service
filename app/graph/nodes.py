@@ -1,5 +1,6 @@
 import asyncio
 
+from app.core.config import settings
 from app.core.logging import logger
 from app.crawler.http_client import create_async_client, fetch_html_async
 from app.crawler.extractor import extract_text_from_html
@@ -21,28 +22,28 @@ def create_search_plan(state: ResearchState) -> dict:
     }
 
 
-async def _crawl_single_url(client, url: str) -> dict:
-    status_code, html, error = await fetch_html_async(client, url)
+async def _crawl_single_url(client, url: str, semaphore: asyncio.Semaphore) -> dict:
 
-    if error:
+    async with semaphore:
+        status_code, html, error = await fetch_html_async(client, url)
+        if error:
+            return {
+                "url": url,
+                "status_code": status_code,
+                "title": None,
+                "content": None,
+                "error": error,
+            }
+
+        title, content = extract_text_from_html(html)
+
         return {
             "url": url,
             "status_code": status_code,
-            "title": None,
-            "content": None,
-            "error": error,
+            "title": title,
+            "content": content,
+            "error": None,
         }
-
-    title, content = extract_text_from_html(html)
-
-    return {
-        "url": url,
-        "status_code": status_code,
-        "title": title,
-        "content": content,
-        "error": None,
-    }
-
 
 async def crawl_urls(state: ResearchState) -> dict:
     urls = state["urls"]
@@ -50,14 +51,17 @@ async def crawl_urls(state: ResearchState) -> dict:
     if not urls:
         return {"sources": []}
 
-    logger.info("crawling_urls_concurrently", url_count=len(urls))
+    logger.info(
+        "crawling_urls_concurrently",
+        url_count=len(urls),
+    )
 
+    semaphore = asyncio.Semaphore(settings.CRAWLER_MAX_CONCURRENCY)
     async with await create_async_client() as client:
         tasks = [
-            _crawl_single_url(client, url)
+            _crawl_single_url(client, url, semaphore)
             for url in urls
         ]
-
         sources = await asyncio.gather(*tasks)
 
     return {"sources": sources}
