@@ -5,3 +5,5 @@ pydantic-settings
 langgraph
 pytest
 httpx
+python-dotenv
+structlog
