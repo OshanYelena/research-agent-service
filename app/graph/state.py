@@ -6,6 +6,8 @@ class SourceState(TypedDict, total=False):
     status_code: int | None
     title: str | None
     content: str | None
+    source_summary: str | None
+    word_count: int | None
     error: str | None
 
 

@@ -14,6 +14,8 @@ class SourceResult(BaseModel):
     status_code: int | None = None
     title: str | None = None
     content_preview: str | None = None
+    source_summary: str | None = None
+    word_count: int | None = None
     error: str | None = None
 
 

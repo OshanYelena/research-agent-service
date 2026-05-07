@@ -26,6 +26,8 @@ async def research(request: ResearchRequest):
             status_code=source.get("status_code"),
             title=source.get("title"),
             content_preview=source.get("content", "")[:300] if source.get("content") else None,
+            source_summary=source.get("source_summary"),
+            word_count=source.get("word_count"),
             error=source.get("error"),
         )
         for source in result["sources"]
