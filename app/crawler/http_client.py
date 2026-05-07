@@ -4,20 +4,20 @@ from app.core.config import settings
 from app.core.logging import logger
 
 
-def fetch_html(url: str) -> tuple[int | None, str | None, str | None]:
-    headers = {
-        "User-Agent": settings.CRAWLER_USER_AGENT
+def _build_headers() -> dict[str, str]:
+    return {
+        "User-Agent": settings.CRAWLER_USER_AGENT,
     }
 
+
+async def fetch_html_async(
+    client: httpx.AsyncClient,
+    url: str,
+) -> tuple[int | None, str | None, str | None]:
     try:
         logger.info("fetching_url", url=url)
 
-        with httpx.Client(
-            headers=headers,
-            timeout=settings.CRAWLER_TIMEOUT_SECONDS,
-            follow_redirects=True,
-        ) as client:
-            response = client.get(url)
+        response = await client.get(url)
 
         content_type = response.headers.get("content-type", "")
 
@@ -45,3 +45,11 @@ def fetch_html(url: str) -> tuple[int | None, str | None, str | None]:
     except httpx.RequestError as exc:
         logger.warning("fetch_request_error", url=url, error=str(exc))
         return None, None, str(exc)
+
+
+async def create_async_client() -> httpx.AsyncClient:
+    return httpx.AsyncClient(
+        headers=_build_headers(),
+        timeout=settings.CRAWLER_TIMEOUT_SECONDS,
+        follow_redirects=True,
+    )

@@ -9,8 +9,8 @@ research_graph = build_research_graph()
 
 
 @router.post("", response_model=ResearchResponse)
-def research(request: ResearchRequest):
-    result = research_graph.invoke(
+async def research(request: ResearchRequest):
+    result = await research_graph.ainvoke(
         {
             "query": request.query,
             "urls": [str(url) for url in request.urls],
