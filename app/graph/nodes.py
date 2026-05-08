@@ -33,34 +33,36 @@ def create_search_plan(state: ResearchState) -> dict:
     }
 
 
-async def _crawl_single_url(client, url: str, semaphore: asyncio.Semaphore) -> dict:
-
+async def _crawl_single_url(
+    client,
+    url: str,
+    semaphore: asyncio.Semaphore,
+) -> dict:
     async with semaphore:
         status_code, html, error = await fetch_html_async(client, url)
+
         if error:
             return {
                 "url": url,
                 "status_code": status_code,
                 "title": None,
                 "content": None,
+                "source_summary": None,
+                "word_count": 0,
+                "extraction_quality": "failed",
+                "extraction_quality_score": 0.0,
                 "error": error,
             }
 
-        title, content, extraction_error = extract_text_from_html(html)
-
-        if extraction_error:
-            return {
-                "url": url,
-                "status_code": status_code,
-                "title": title,
-                "content": content,
-                "source_summary": None,
-                "word_count": len(content.split()) if content else 0,
-                "error": extraction_error,
-            }
+        title, content, extraction_quality, extraction_quality_score = extract_text_from_html(html)
 
         word_count = len(content.split()) if content else 0
         source_summary = summarize_text_preview(content, max_words=80) if content else None
+
+        if extraction_quality == "failed":
+            error = "No readable content could be extracted from this page"
+        else:
+            error = None
 
         return {
             "url": url,
@@ -69,8 +71,9 @@ async def _crawl_single_url(client, url: str, semaphore: asyncio.Semaphore) -> d
             "content": content,
             "source_summary": source_summary,
             "word_count": word_count,
-            "error": None,
-
+            "extraction_quality": extraction_quality,
+            "extraction_quality_score": extraction_quality_score,
+            "error": error,
         }
 
 async def crawl_urls(state: ResearchState) -> dict:

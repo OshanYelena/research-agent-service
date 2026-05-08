@@ -1,3 +1,6 @@
+from app.graph import state
+
+
 def summarize_text_preview(text: str, max_words: int = 80) -> str:
     words = text.split()
 
@@ -9,8 +12,9 @@ def summarize_text_preview(text: str, max_words: int = 80) -> str:
 
 def build_fallback_summary(sources: list[dict]) -> str:
     valid_sources = [
-        source for source in sources
-        if source.get("content")
+        source
+        for source in sources
+        if source.get("content") and source.get("extraction_quality") != "failed"
     ]
 
     if not valid_sources:

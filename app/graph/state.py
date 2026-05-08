@@ -9,6 +9,8 @@ class SourceState(TypedDict, total=False):
     source_summary: str | None
     word_count: int | None
     error: str | None
+    extraction_quality: str | None
+    extraction_quality_score: float | None
 
 
 class ResearchState(TypedDict):

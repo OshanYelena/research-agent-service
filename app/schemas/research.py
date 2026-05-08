@@ -17,6 +17,8 @@ class SourceResult(BaseModel):
     source_summary: str | None = None
     word_count: int | None = None
     error: str | None = None
+    extraction_quality: str | None = None
+    extraction_quality_score: float | None = None
 
 
 class ResearchResponse(BaseModel):

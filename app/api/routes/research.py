@@ -41,6 +41,8 @@ async def research(request: ResearchRequest):
             source_summary=source.get("source_summary"),
             word_count=source.get("word_count"),
             error=source.get("error"),
+            extraction_quality=source.get("extraction_quality"),
+            extraction_quality_score=source.get("extraction_quality_score"),
         )
         for source in result["sources"]
     ]

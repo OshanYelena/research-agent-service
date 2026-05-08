@@ -8,6 +8,25 @@ def _clean_text(text: str) -> str:
     return " ".join(text.split())
 
 
+def assess_extraction_quality(text: str | None) -> tuple[str, float]:
+    if not text:
+        return "failed", 0.0
+
+    length = len(text)
+
+    if length >= 1000:
+        return "high", 1.0
+
+    if length >= 400:
+        return "medium", 0.7
+
+    if length >= 100:
+        return "low", 0.4
+
+    return "very_low", 0.2
+
+
+
 def _extract_title_from_soup(soup: BeautifulSoup) -> str | None:
     if soup.title and soup.title.string:
         return _clean_text(soup.title.string)
@@ -31,7 +50,9 @@ def _fallback_extract_text(soup: BeautifulSoup) -> str:
     return _clean_text(target.get_text(" ", strip=True))
 
 
-def extract_text_from_html(html: str) -> tuple[str | None, str | None, str | None]:
+def extract_text_from_html(
+    html: str,
+) -> tuple[str | None, str | None, str, float]:
     soup = BeautifulSoup(html, "lxml")
     fallback_title = _extract_title_from_soup(soup)
 
@@ -48,15 +69,14 @@ def extract_text_from_html(html: str) -> tuple[str | None, str | None, str | Non
 
         text = _clean_text(summary_soup.get_text(" ", strip=True))
 
-        if len(text) >= settings.CRAWLER_MIN_CONTENT_CHARS:
-            return title, text, None
+        if text:
+            quality, score = assess_extraction_quality(text)
+            return title, text, quality, score
 
     except Exception:
         pass
 
     fallback_text = _fallback_extract_text(soup)
+    quality, score = assess_extraction_quality(fallback_text)
 
-    if len(fallback_text) < settings.CRAWLER_MIN_CONTENT_CHARS:
-        return fallback_title, fallback_text, "Extracted content is too short"
-
-    return fallback_title, fallback_text, None
+    return fallback_title, fallback_text, quality, score
