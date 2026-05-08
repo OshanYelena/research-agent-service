@@ -20,6 +20,7 @@ async def research(request: ResearchRequest):
             "sources": [],
             "summary": "",
             "summary_mode": "none",
+            "discovered_urls": [],
         }
     )
 

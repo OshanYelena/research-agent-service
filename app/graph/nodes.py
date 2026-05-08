@@ -8,20 +8,28 @@ from app.graph.state import ResearchState
 from app.crawler.summarizer import summarize_text_preview, build_fallback_summary
 from app.llm.client import LLMClient
 from app.crawler.url_safety import deduplicate_urls, is_url_allowed
+from app.search.service import SearchService
+
+
 
 
 def create_search_plan(state: ResearchState) -> dict:
+
     query = state["query"]
-    urls = state["urls"]
+    url_count = len(state["urls"])
+    if url_count > 0:
+        plan = f"Crawl {url_count} user-provided URLs and summarize information related to: {query}"
+    else:
+        plan = f"Discover relevant URLs for query, crawl them, and summarize information related to: {query}"
 
     logger.info(
         "creating_search_plan",
         query=query,
-        url_count=len(urls),
+        user_url_count=url_count,
     )
 
     return {
-        "search_plan": f"Crawl {len(urls)} user-provided URLs concurrently and summarize information related to: {query}"
+        "search_plan": plan
     }
 
 
@@ -66,7 +74,7 @@ async def _crawl_single_url(client, url: str, semaphore: asyncio.Semaphore) -> d
         }
 
 async def crawl_urls(state: ResearchState) -> dict:
-    urls = deduplicate_urls(state["urls"])
+    urls = deduplicate_urls(state["discovered_urls"])
 
     if not urls:
         return {"sources": []}
@@ -159,3 +167,25 @@ async def summarize_sources(state: ResearchState) -> dict:
             "summary": fallback_summary,
             "summary_mode": "fallback",
         }
+
+async def discover_urls(state: ResearchState) -> dict:
+    if state["urls"]:
+        return {
+            "discovered_urls": state["urls"]
+        }
+
+    logger.info(
+        "discovering_urls_from_query",
+        query=state["query"],
+    )
+
+    search_service = SearchService()
+
+    urls = await search_service.discover_urls(
+        query=state["query"],
+        max_results=settings.SEARCH_MAX_RESULTS,
+    )
+
+    return {
+        "discovered_urls": urls
+    }

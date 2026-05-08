@@ -2,17 +2,18 @@ import asyncio
 
 from app.core.config import settings
 from app.core.logging import logger
-from app.search.brave_provider import BraveSearchProvider
+# from app.search.brave_provider import BraveSearchProvider
 from app.search.models import SearchResult
 from app.search.normalizer import extract_urls_from_results, normalize_search_results
 from app.search.query_expander import expand_query
 from app.search.ranker import rank_search_results
 from app.search.provider import SearchProvider
+from app.search.serper_provider import SerperSearchProvider
 
 
 class SearchService:
     def __init__(self, providers: list[SearchProvider] | None = None):
-        self.providers = providers or [BraveSearchProvider()]
+        self.providers = providers or [SerperSearchProvider()]
 
     async def discover_results(
         self,

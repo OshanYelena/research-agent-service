@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     BRAVE_SEARCH_API_KEY: str | None = None
     SEARCH_MAX_RESULTS: int = 5
 
+    SERPER_API_KEY: str | None = None
+
     @property
     def blocked_domains(self) -> set[str]:
         return {
