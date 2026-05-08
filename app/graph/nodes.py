@@ -38,7 +38,19 @@ async def _crawl_single_url(client, url: str, semaphore: asyncio.Semaphore) -> d
                 "error": error,
             }
 
-        title, content = extract_text_from_html(html)
+        title, content, extraction_error = extract_text_from_html(html)
+
+        if extraction_error:
+            return {
+                "url": url,
+                "status_code": status_code,
+                "title": title,
+                "content": content,
+                "source_summary": None,
+                "word_count": len(content.split()) if content else 0,
+                "error": extraction_error,
+            }
+
         word_count = len(content.split()) if content else 0
         source_summary = summarize_text_preview(content, max_words=80) if content else None
 
