@@ -20,7 +20,11 @@ class SourceResult(BaseModel):
 
 
 class ResearchResponse(BaseModel):
+    trace_id: str
     query: str
     search_plan: str
     summary: str
+    summary_mode: str
+    source_count: int
+    failed_source_count: int
     sources: list[SourceResult]

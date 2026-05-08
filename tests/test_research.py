@@ -21,4 +21,8 @@ def test_research_endpoint_with_url():
     assert data["query"] == "summarize this article"
     assert "summary" in data
     assert "sources" in data
+    assert "trace_id" in data
+    assert "summary_mode" in data
+    assert "source_count" in data
+    assert "failed_source_count" in data
     assert len(data["sources"]) == 1

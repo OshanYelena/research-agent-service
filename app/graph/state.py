@@ -17,3 +17,4 @@ class ResearchState(TypedDict):
     search_plan: str
     sources: list[SourceState]
     summary: str
+    summary_mode: str

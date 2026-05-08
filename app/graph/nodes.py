@@ -124,9 +124,9 @@ async def summarize_sources(state: ResearchState) -> dict:
     ]
 
     if not valid_sources:
-
         return {
-            "summary": "No readable source content could be extracted from the provided URLs."
+            "summary": "No readable source content could be extracted from the provided URLs.",
+            "summary_mode": "none",
         }
 
     try:
@@ -142,7 +142,10 @@ async def summarize_sources(state: ResearchState) -> dict:
             query=state["query"],
             sources=valid_sources,
         )
-        return {"summary": summary}
+        return {
+            "summary": summary,
+            "summary_mode": "llm",
+        }
 
     except Exception as exc:
 
@@ -152,4 +155,7 @@ async def summarize_sources(state: ResearchState) -> dict:
 
         )
         fallback_summary = build_fallback_summary(valid_sources)
-        return {"summary": fallback_summary}
+        return {
+            "summary": fallback_summary,
+            "summary_mode": "fallback",
+        }
