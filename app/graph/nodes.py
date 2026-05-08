@@ -7,6 +7,8 @@ from app.crawler.extractor import extract_text_from_html
 from app.graph.state import ResearchState
 from app.crawler.summarizer import summarize_text_preview, build_fallback_summary
 from app.llm.client import LLMClient
+from app.crawler.url_safety import deduplicate_urls, is_url_allowed
+
 
 def create_search_plan(state: ResearchState) -> dict:
     query = state["query"]
@@ -52,25 +54,54 @@ async def _crawl_single_url(client, url: str, semaphore: asyncio.Semaphore) -> d
         }
 
 async def crawl_urls(state: ResearchState) -> dict:
-    urls = state["urls"]
+    urls = deduplicate_urls(state["urls"])
 
     if not urls:
         return {"sources": []}
 
+    safe_urls = []
+    blocked_sources = []
+
+    for url in urls:
+        allowed, reason = is_url_allowed(url)
+
+        if allowed:
+            safe_urls.append(url)
+        else:
+            blocked_sources.append(
+                {
+                    "url": url,
+                    "status_code": None,
+                    "title": None,
+                    "content": None,
+                    "source_summary": None,
+                    "word_count": 0,
+                    "error": reason,
+                }
+            )
+
+    if not safe_urls:
+        return {"sources": blocked_sources}
+
     logger.info(
-        "crawling_urls_concurrently",
-        url_count=len(urls),
+        "crawling_safe_urls_concurrently",
+        url_count=len(safe_urls),
+        blocked_url_count=len(blocked_sources),
     )
 
     semaphore = asyncio.Semaphore(settings.CRAWLER_MAX_CONCURRENCY)
+
     async with await create_async_client() as client:
         tasks = [
             _crawl_single_url(client, url, semaphore)
-            for url in urls
+            for url in safe_urls
         ]
-        sources = await asyncio.gather(*tasks)
 
-    return {"sources": sources}
+        crawled_sources = await asyncio.gather(*tasks)
+
+    return {
+        "sources": blocked_sources + crawled_sources
+    }
 
 
 async def summarize_sources(state: ResearchState) -> dict:

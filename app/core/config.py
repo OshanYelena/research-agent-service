@@ -18,6 +18,15 @@ class Settings(BaseSettings):
     LLM_MODEL: str
     LLM_MAX_INPUT_CHARS: int = 12_000
 
+    CRAWLER_BLOCKED_DOMAINS: str = "localhost,127.0.0.1,0.0.0.0"
+
+    @property
+    def blocked_domains(self) -> set[str]:
+        return {
+            domain.strip().lower()
+            for domain in self.CRAWLER_BLOCKED_DOMAINS.split(",")
+            if domain.strip()
+        }
 
     model_config = SettingsConfigDict(
         env_file=".env",
