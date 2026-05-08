@@ -19,8 +19,10 @@ class Settings(BaseSettings):
     LLM_MAX_INPUT_CHARS: int = 12_000
 
     CRAWLER_BLOCKED_DOMAINS: str = "localhost,127.0.0.1,0.0.0.0"
-
     CRAWLER_MIN_CONTENT_CHARS: int = 200
+
+    BRAVE_SEARCH_API_KEY: str | None = None
+    SEARCH_MAX_RESULTS: int = 5
 
     @property
     def blocked_domains(self) -> set[str]:
