@@ -11,6 +11,7 @@ class SourceState(TypedDict, total=False):
     error: str | None
     extraction_quality: str | None
     extraction_quality_score: float | None
+    content_relevance_score: float | None
 
 
 class ResearchState(TypedDict):

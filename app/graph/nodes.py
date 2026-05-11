@@ -128,24 +128,35 @@ async def crawl_urls(state: ResearchState) -> dict:
 
 
 async def summarize_sources(state: ResearchState) -> dict:
-
     service = SummarizationService()
 
-    summary, summary_mode = await service.summarize(
-
+    summary, summary_mode, ranked_sources = await service.summarize(
         query=state["query"],
-
         sources=state["sources"],
-
     )
 
-    return {
-
-        "summary": summary,
-
-        "summary_mode": summary_mode,
-
+    source_by_url = {
+        source.get("url"): source
+        for source in ranked_sources
     }
+
+    enriched_sources = []
+
+    for source in state["sources"]:
+        url = source.get("url")
+
+        if url in source_by_url:
+            enriched_sources.append(source_by_url[url])
+        else:
+            enriched_sources.append(source)
+
+    return {
+        "summary": summary,
+        "summary_mode": summary_mode,
+        "sources": enriched_sources,
+    }
+
+
 
 async def discover_urls(state: ResearchState) -> dict:
     if state["urls"]:

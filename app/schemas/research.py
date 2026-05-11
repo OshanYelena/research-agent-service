@@ -19,6 +19,7 @@ class SourceResult(BaseModel):
     error: str | None = None
     extraction_quality: str | None = None
     extraction_quality_score: float | None = None
+    content_relevance_score: float | None = None
 
 
 class ResearchResponse(BaseModel):

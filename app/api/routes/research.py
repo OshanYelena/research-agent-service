@@ -43,6 +43,7 @@ async def research(request: ResearchRequest):
             error=source.get("error"),
             extraction_quality=source.get("extraction_quality"),
             extraction_quality_score=source.get("extraction_quality_score"),
+            content_relevance_score=source.get("content_relevance_score"),
         )
         for source in result["sources"]
     ]
