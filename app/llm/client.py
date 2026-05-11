@@ -18,14 +18,15 @@ class LLMClient:
     ) -> str:
         source_blocks = []
 
-        for index, source in enumerate(sources, start=1):
+        for fallback_index, source in enumerate(sources, start=1):
+            citation_id = source.get("citation_id") or fallback_index
             title = source.get("title") or source.get("url")
             url = source.get("url")
             content = source.get("source_summary") or source.get("content") or ""
 
             source_blocks.append(
                 f"""
-SOURCE [{index}]
+SOURCE [{citation_id}]
 Title: {title}
 URL: {url}
 Content:

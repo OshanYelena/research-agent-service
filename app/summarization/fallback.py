@@ -13,7 +13,8 @@ def build_fallback_summary(sources: list[dict]) -> str:
 
     summary_parts = []
 
-    for index, source in enumerate(valid_sources, start=1):
+    for fallback_index, source in enumerate(valid_sources, start=1):
+        citation_id = source.get("citation_id") or fallback_index
         title = source.get("title") or source.get("url")
         source_summary = source.get("source_summary")
 
@@ -23,6 +24,6 @@ def build_fallback_summary(sources: list[dict]) -> str:
                 max_words=80,
             )
 
-        summary_parts.append(f"[{index}] {title}: {source_summary}")
+        summary_parts.append(f"[{citation_id}] {title}: {source_summary}")
 
     return "\n\n".join(summary_parts)

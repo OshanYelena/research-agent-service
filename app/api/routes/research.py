@@ -44,6 +44,7 @@ async def research(request: ResearchRequest):
             extraction_quality=source.get("extraction_quality"),
             extraction_quality_score=source.get("extraction_quality_score"),
             content_relevance_score=source.get("content_relevance_score"),
+            citation_id=source.get("citation_id"),
         )
         for source in result["sources"]
     ]

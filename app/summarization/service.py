@@ -1,7 +1,7 @@
 from app.summarization.relevance import rank_sources_by_relevance
 from app.summarization.source_summarizer import attach_source_summaries
 from app.summarization.synthesizer import FinalSynthesizer
-
+from app.summarization.citations import attach_citation_ids
 
 class SummarizationService:
     async def summarize(
@@ -35,5 +35,7 @@ class SummarizationService:
             query=query,
             sources=ranked_sources,
         )
+        ranked_sources = attach_source_summaries(ranked_sources)
+        ranked_sources = attach_citation_ids(ranked_sources)
 
         return summary, summary_mode, ranked_sources

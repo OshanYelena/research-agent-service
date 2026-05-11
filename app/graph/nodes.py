@@ -135,25 +135,21 @@ async def summarize_sources(state: ResearchState) -> dict:
         sources=state["sources"],
     )
 
-    source_by_url = {
-        source.get("url"): source
+    ranked_urls = {
+        source.get("url")
         for source in ranked_sources
     }
 
-    enriched_sources = []
-
-    for source in state["sources"]:
-        url = source.get("url")
-
-        if url in source_by_url:
-            enriched_sources.append(source_by_url[url])
-        else:
-            enriched_sources.append(source)
+    failed_or_unused_sources = [
+        source
+        for source in state["sources"]
+        if source.get("url") not in ranked_urls
+    ]
 
     return {
         "summary": summary,
         "summary_mode": summary_mode,
-        "sources": enriched_sources,
+        "sources": ranked_sources + failed_or_unused_sources,
     }
 
 

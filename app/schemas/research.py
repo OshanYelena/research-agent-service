@@ -20,6 +20,7 @@ class SourceResult(BaseModel):
     extraction_quality: str | None = None
     extraction_quality_score: float | None = None
     content_relevance_score: float | None = None
+    citation_id: int | None = None
 
 
 class ResearchResponse(BaseModel):
