@@ -5,10 +5,10 @@ from app.core.logging import logger
 from app.crawler.http_client import create_async_client, fetch_html_async
 from app.crawler.extractor import extract_text_from_html
 from app.graph.state import ResearchState
-from app.crawler.summarizer import summarize_text_preview, build_fallback_summary
-from app.llm.client import LLMClient
+from app.crawler.summarizer import summarize_text_preview
 from app.crawler.url_safety import deduplicate_urls, is_url_allowed
 from app.search.service import SearchService
+from app.summarization.service import SummarizationService
 
 
 
@@ -129,47 +129,23 @@ async def crawl_urls(state: ResearchState) -> dict:
 
 async def summarize_sources(state: ResearchState) -> dict:
 
-    valid_sources = [
-        source for source in state["sources"]
-        if source.get("content")
-    ]
+    service = SummarizationService()
 
-    if not valid_sources:
-        return {
-            "summary": "No readable source content could be extracted from the provided URLs.",
-            "summary_mode": "none",
-        }
+    summary, summary_mode = await service.summarize(
 
-    try:
+        query=state["query"],
 
-        logger.info(
-            "summarizing_sources_with_llm",
-            valid_source_count=len(valid_sources),
-        )
+        sources=state["sources"],
 
-        llm_client = LLMClient()
+    )
 
-        summary = await llm_client.summarize_sources(
-            query=state["query"],
-            sources=valid_sources,
-        )
-        return {
-            "summary": summary,
-            "summary_mode": "llm",
-        }
+    return {
 
-    except Exception as exc:
+        "summary": summary,
 
-        logger.warning(
-            "llm_summary_failed_using_fallback",
-            error=str(exc),
+        "summary_mode": summary_mode,
 
-        )
-        fallback_summary = build_fallback_summary(valid_sources)
-        return {
-            "summary": fallback_summary,
-            "summary_mode": "fallback",
-        }
+    }
 
 async def discover_urls(state: ResearchState) -> dict:
     if state["urls"]:
