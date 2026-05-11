@@ -21,6 +21,8 @@ async def research(request: ResearchRequest):
             "summary": "",
             "summary_mode": "none",
             "discovered_urls": [],
+            "evidence_strength": "none",
+            "evidence_warning": None,
         }
     )
 
@@ -55,6 +57,8 @@ async def research(request: ResearchRequest):
         search_plan=result["search_plan"],
         summary=result["summary"],
         summary_mode=result["summary_mode"],
+        evidence_strength=result["evidence_strength"],
+        evidence_warning=result.get("evidence_warning"),
         source_count=source_count,
         failed_source_count=failed_source_count,
         sources=sources,

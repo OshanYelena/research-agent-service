@@ -23,6 +23,7 @@ class SourceResult(BaseModel):
     citation_id: int | None = None
 
 
+
 class ResearchResponse(BaseModel):
     trace_id: str
     query: str
@@ -31,4 +32,6 @@ class ResearchResponse(BaseModel):
     summary_mode: str
     source_count: int
     failed_source_count: int
+    evidence_strength: str
+    evidence_warning: str | None = None
     sources: list[SourceResult]

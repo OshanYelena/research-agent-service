@@ -129,8 +129,13 @@ async def crawl_urls(state: ResearchState) -> dict:
 
 async def summarize_sources(state: ResearchState) -> dict:
     service = SummarizationService()
-
-    summary, summary_mode, ranked_sources = await service.summarize(
+    (
+        summary,
+        summary_mode,
+        ranked_sources,
+        evidence_strength,
+        evidence_warning,
+    ) = await service.summarize(
         query=state["query"],
         sources=state["sources"],
     )
@@ -150,8 +155,9 @@ async def summarize_sources(state: ResearchState) -> dict:
         "summary": summary,
         "summary_mode": summary_mode,
         "sources": ranked_sources + failed_or_unused_sources,
+        "evidence_strength": evidence_strength,
+        "evidence_warning": evidence_warning,
     }
-
 
 
 async def discover_urls(state: ResearchState) -> dict:

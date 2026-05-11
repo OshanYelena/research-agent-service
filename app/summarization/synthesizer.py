@@ -5,9 +5,11 @@ from app.summarization.fallback import build_fallback_summary
 
 class FinalSynthesizer:
     async def synthesize(
-        self,
-        query: str,
-        sources: list[dict],
+            self,
+            query: str,
+            sources: list[dict],
+            evidence_strength: str,
+            evidence_warning: str | None,
     ) -> tuple[str, str]:
         try:
             logger.info(
@@ -20,6 +22,8 @@ class FinalSynthesizer:
             summary = await llm_client.summarize_sources(
                 query=query,
                 sources=sources,
+                evidence_strength=evidence_strength,
+                evidence_warning=evidence_warning,
             )
 
             return summary, "llm"
