@@ -8,24 +8,32 @@ class LLMClient:
         if not settings.OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY is not configured")
 
-        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        self.client = AsyncOpenAI(
+            api_key=settings.OPENAI_API_KEY,
+            timeout=settings.LLM_TIMEOUT_SECONDS,
+            max_retries=0,
+        )
         self.model = settings.LLM_MODEL
 
     async def summarize_sources(
-        self,
-        query: str,
-        sources: list[dict],
+            self,
+            query: str,
+            sources: list[dict],
+            evidence_strength: str | None = None,
+            evidence_warning: str | None = None,
     ) -> str:
+
         source_blocks = []
 
-        for index, source in enumerate(sources, start=1):
+        for fallback_index, source in enumerate(sources, start=1):
+            citation_id = source.get("citation_id") or fallback_index
             title = source.get("title") or source.get("url")
             url = source.get("url")
-            content = source.get("content") or ""
+            content = source.get("source_summary") or source.get("content") or ""
 
             source_blocks.append(
                 f"""
-SOURCE [{index}]
+SOURCE [{citation_id}]
 Title: {title}
 URL: {url}
 Content:
@@ -39,12 +47,21 @@ You are a careful research summarization assistant.
 User query:
 {query}
 
-Rules:
-- Only use the provided source content.
-- Do not invent facts.
-- Use citations like [1], [2].
-- If the sources are weak, incomplete, or unrelated, say so.
-- Keep the answer concise and useful.
+Evidence strength:
+
+{evidence_strength}
+
+Evidence warning:
+
+{evidence_warning}
+
+Additional rules:
+
+- If evidence strength is weak, say that the answer is based on limited evidence.
+
+- Do not mention specific frameworks unless they appear in the provided source content.
+
+- Do not infer details from source titles alone.
 
 Sources:
 {chr(10).join(source_blocks)}

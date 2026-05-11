@@ -19,6 +19,9 @@ class SourceResult(BaseModel):
     error: str | None = None
     extraction_quality: str | None = None
     extraction_quality_score: float | None = None
+    content_relevance_score: float | None = None
+    citation_id: int | None = None
+
 
 
 class ResearchResponse(BaseModel):
@@ -29,4 +32,6 @@ class ResearchResponse(BaseModel):
     summary_mode: str
     source_count: int
     failed_source_count: int
+    evidence_strength: str
+    evidence_warning: str | None = None
     sources: list[SourceResult]

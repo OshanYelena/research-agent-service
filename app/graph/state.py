@@ -11,13 +11,22 @@ class SourceState(TypedDict, total=False):
     error: str | None
     extraction_quality: str | None
     extraction_quality_score: float | None
+    content_relevance_score: float | None
+    citation_id: int | None
+
 
 
 class ResearchState(TypedDict):
     query: str
     urls: list[str]
-    search_plan: str
-    sources: list[SourceState]
     discovered_urls: list[str]
+
+    search_plan: str
+
+    sources: list[SourceState]
+
     summary: str
     summary_mode: str
+
+    evidence_strength: str
+    evidence_warning: str | None
