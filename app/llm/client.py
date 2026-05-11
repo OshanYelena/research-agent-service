@@ -8,7 +8,11 @@ class LLMClient:
         if not settings.OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY is not configured")
 
-        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        self.client = AsyncOpenAI(
+            api_key=settings.OPENAI_API_KEY,
+            timeout=settings.LLM_TIMEOUT_SECONDS,
+            max_retries=0,
+        )
         self.model = settings.LLM_MODEL
 
     async def summarize_sources(
