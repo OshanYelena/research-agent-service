@@ -21,7 +21,7 @@ class LLMClient:
         for index, source in enumerate(sources, start=1):
             title = source.get("title") or source.get("url")
             url = source.get("url")
-            content = source.get("content") or ""
+            content = source.get("source_summary") or source.get("content") or ""
 
             source_blocks.append(
                 f"""

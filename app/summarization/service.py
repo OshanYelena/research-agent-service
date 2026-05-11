@@ -2,6 +2,8 @@ from app.core.logging import logger
 from app.llm.client import LLMClient
 from app.summarization.fallback import build_fallback_summary
 from app.summarization.relevance import rank_sources_by_relevance
+from app.summarization.source_summarizer import attach_source_summaries
+
 
 class SummarizationService:
     async def summarize(
@@ -26,6 +28,8 @@ class SummarizationService:
             query=query,
             sources=valid_sources,
         )
+
+        ranked_sources = attach_source_summaries(ranked_sources)
 
         try:
             logger.info(
