@@ -2,13 +2,14 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Request
 
+from app.core.tracing import get_tracer
 from app.graph.workflow import build_research_graph
 from app.schemas.research import ResearchRequest, ResearchResponse, SourceResult
 
 router = APIRouter(prefix="/research", tags=["research"])
 
 research_graph = build_research_graph()
-
+tracer = get_tracer(__name__)
 
 @router.post("", response_model=ResearchResponse)
 async def research(
@@ -17,19 +18,26 @@ async def research(
 ):
     trace_id = getattr(request.state, "trace_id", str(uuid4()))
 
-    result = await research_graph.ainvoke(
-        {
-            "query": request_body.query,
-            "urls": [str(url) for url in request_body.urls],
-            "search_plan": "",
-            "sources": [],
-            "summary": "",
-            "summary_mode": "none",
-            "discovered_urls": [],
-            "evidence_strength": "none",
-            "evidence_warning": None,
-        }
-    )
+    with tracer.start_as_current_span("research_graph.invoke") as span:
+        span.set_attribute("research.query", request_body.query)
+        span.set_attribute("research.url_count", len(request_body.urls))
+
+        result = await research_graph.ainvoke(
+            {
+                "query": request_body.query,
+                "urls": [str(url) for url in request_body.urls],
+                "search_plan": "",
+                "sources": [],
+                "summary": "",
+                "summary_mode": "none",
+                "discovered_urls": [],
+                "evidence_strength": "none",
+                "evidence_warning": None,
+            }
+        )
+
+        span.set_attribute("research.source_count", len(result["sources"]))
+        span.set_attribute("research.summary_mode", result["summary_mode"])
 
     source_count = len(result["sources"])
     failed_source_count = len(
