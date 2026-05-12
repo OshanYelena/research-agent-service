@@ -25,10 +25,11 @@ class SerperSearchProvider(SearchProvider):
 
         payload = {
             "q": query,
+            "num": max_results,
         }
 
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            async with httpx.AsyncClient(timeout=settings.SEARCH_TIMEOUT_SECONDS) as client:
                 response = await client.post(
                     self.BASE_URL,
                     headers=headers,
@@ -71,7 +72,7 @@ class SerperSearchProvider(SearchProvider):
             logger.warning(
                 "serper_search_failed",
                 query=query,
-                error=str(exc),
+                error_type=type(exc).__name__,
+                error=str(exc) or repr(exc),
             )
-
             return []
