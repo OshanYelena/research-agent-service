@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.core.logging import configure_logging, logger
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-
+from app.core.middleware import RequestMetadataMiddleware
 from app.core.exceptions import AppError
 from app.core.error_handlers import (
     app_error_handler,
@@ -39,7 +39,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-
+app.add_middleware(RequestMetadataMiddleware)
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
