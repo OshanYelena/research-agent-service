@@ -9,6 +9,7 @@ from app.core.logging import configure_logging, logger
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.middleware import RequestMetadataMiddleware
+from app.core.tracing import configure_tracing
 from app.core.exceptions import AppError
 from app.core.error_handlers import (
     app_error_handler,
@@ -44,6 +45,8 @@ app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
+
+configure_tracing(app)
 
 app.include_router(health_router)
 app.include_router(research_router)
