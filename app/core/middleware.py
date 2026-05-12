@@ -1,6 +1,6 @@
 import time
 from uuid import uuid4
-
+import asyncio
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -73,7 +73,50 @@ class RequestMetadataMiddleware(BaseHTTPMiddleware):
                     },
                 )
 
-        response = await call_next(request)
+        try:
+            response = await asyncio.wait_for(
+                call_next(request),
+                timeout=settings.REQUEST_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            processing_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+            logger.warning(
+                "request_timeout",
+                trace_id=trace_id,
+                method=request.method,
+                path=request.url.path,
+                timeout_seconds=settings.REQUEST_TIMEOUT_SECONDS,
+            )
+
+            REQUEST_COUNT.labels(
+                method=request.method,
+                path=request.url.path,
+                status_code="504",
+            ).inc()
+
+            REQUEST_LATENCY.labels(
+                method=request.method,
+                path=request.url.path,
+            ).observe(processing_time_ms / 1000)
+
+            return JSONResponse(
+                status_code=504,
+                content={
+                    "error": {
+                        "code": "REQUEST_TIMEOUT",
+                        "message": "Request exceeded the configured timeout budget.",
+                        "details": {
+                            "timeout_seconds": settings.REQUEST_TIMEOUT_SECONDS,
+                        },
+                        "trace_id": trace_id,
+                    }
+                },
+                headers={
+                    "X-Trace-Id": trace_id,
+                    "X-Processing-Time-Ms": str(processing_time_ms),
+                },
+            )
 
         processing_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
 

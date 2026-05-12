@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_REQUESTS: int = 10
     RATE_LIMIT_WINDOW_SECONDS: int = 60
 
+    REQUEST_TIMEOUT_SECONDS: float = 45.0
+
 
     @property
     def blocked_domains(self) -> set[str]:
