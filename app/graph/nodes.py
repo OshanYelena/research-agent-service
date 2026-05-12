@@ -5,10 +5,10 @@ from app.core.logging import logger
 from app.crawler.http_client import create_async_client, fetch_html_async
 from app.crawler.extractor import extract_text_from_html
 from app.graph.state import ResearchState
-from app.crawler.summarizer import summarize_text_preview, build_fallback_summary
-from app.llm.client import LLMClient
+from app.crawler.summarizer import summarize_text_preview
 from app.crawler.url_safety import deduplicate_urls, is_url_allowed
 from app.search.service import SearchService
+from app.summarization.service import SummarizationService
 
 
 
@@ -128,48 +128,37 @@ async def crawl_urls(state: ResearchState) -> dict:
 
 
 async def summarize_sources(state: ResearchState) -> dict:
+    service = SummarizationService()
+    (
+        summary,
+        summary_mode,
+        ranked_sources,
+        evidence_strength,
+        evidence_warning,
+    ) = await service.summarize(
+        query=state["query"],
+        sources=state["sources"],
+    )
 
-    valid_sources = [
-        source for source in state["sources"]
-        if source.get("content")
+    ranked_urls = {
+        source.get("url")
+        for source in ranked_sources
+    }
+
+    failed_or_unused_sources = [
+        source
+        for source in state["sources"]
+        if source.get("url") not in ranked_urls
     ]
 
-    if not valid_sources:
-        return {
-            "summary": "No readable source content could be extracted from the provided URLs.",
-            "summary_mode": "none",
-        }
+    return {
+        "summary": summary,
+        "summary_mode": summary_mode,
+        "sources": ranked_sources + failed_or_unused_sources,
+        "evidence_strength": evidence_strength,
+        "evidence_warning": evidence_warning,
+    }
 
-    try:
-
-        logger.info(
-            "summarizing_sources_with_llm",
-            valid_source_count=len(valid_sources),
-        )
-
-        llm_client = LLMClient()
-
-        summary = await llm_client.summarize_sources(
-            query=state["query"],
-            sources=valid_sources,
-        )
-        return {
-            "summary": summary,
-            "summary_mode": "llm",
-        }
-
-    except Exception as exc:
-
-        logger.warning(
-            "llm_summary_failed_using_fallback",
-            error=str(exc),
-
-        )
-        fallback_summary = build_fallback_summary(valid_sources)
-        return {
-            "summary": fallback_summary,
-            "summary_mode": "fallback",
-        }
 
 async def discover_urls(state: ResearchState) -> dict:
     if state["urls"]:

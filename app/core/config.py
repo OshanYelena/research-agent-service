@@ -26,6 +26,11 @@ class Settings(BaseSettings):
 
     SERPER_API_KEY: str | None = None
 
+    SEARCH_TIMEOUT_SECONDS: float = 20.0
+
+    LLM_TIMEOUT_SECONDS: float = 30.0
+    LLM_MAX_RETRIES: int = 2
+
     @property
     def blocked_domains(self) -> set[str]:
         return {
