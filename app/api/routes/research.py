@@ -1,5 +1,7 @@
-from fastapi import APIRouter
 from uuid import uuid4
+
+from fastapi import APIRouter, Request
+
 from app.graph.workflow import build_research_graph
 from app.schemas.research import ResearchRequest, ResearchResponse, SourceResult
 
@@ -9,13 +11,16 @@ research_graph = build_research_graph()
 
 
 @router.post("", response_model=ResearchResponse)
-async def research(request: ResearchRequest):
-    trace_id = str(uuid4())
+async def research(
+    request_body: ResearchRequest,
+    request: Request,
+):
+    trace_id = getattr(request.state, "trace_id", str(uuid4()))
 
     result = await research_graph.ainvoke(
         {
-            "query": request.query,
-            "urls": [str(url) for url in request.urls],
+            "query": request_body.query,
+            "urls": [str(url) for url in request_body.urls],
             "search_plan": "",
             "sources": [],
             "summary": "",
@@ -62,4 +67,5 @@ async def research(request: ResearchRequest):
         source_count=source_count,
         failed_source_count=failed_source_count,
         sources=sources,
+        processing_time_ms=None,
     )
