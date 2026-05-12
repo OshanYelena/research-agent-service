@@ -41,6 +41,26 @@ class Settings(BaseSettings):
 
     REQUEST_TIMEOUT_SECONDS: float = 45.0
 
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+    ALLOWED_HOSTS: str = "localhost,127.0.0.1"
+    ENABLE_DOCS: bool = True
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        return [
+            origin.strip()
+            for origin in self.ALLOWED_ORIGINS.split(",")
+            if origin.strip()
+        ]
+
+    @property
+    def allowed_hosts(self) -> list[str]:
+        return [
+            host.strip()
+            for host in self.ALLOWED_HOSTS.split(",")
+            if host.strip()
+        ]
+
 
     @property
     def blocked_domains(self) -> set[str]:

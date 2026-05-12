@@ -133,6 +133,10 @@ class RequestMetadataMiddleware(BaseHTTPMiddleware):
 
         response.headers["X-Trace-Id"] = trace_id
         response.headers["X-Processing-Time-Ms"] = str(processing_time_ms)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
 
         if rate_limit_remaining is not None:
             response.headers["X-RateLimit-Remaining"] = str(rate_limit_remaining)
