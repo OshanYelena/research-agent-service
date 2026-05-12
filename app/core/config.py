@@ -26,6 +26,10 @@ class Settings(BaseSettings):
 
     SERPER_API_KEY: str | None = None
 
+    OTEL_ENABLED: bool = True
+    OTEL_SERVICE_NAME: str = "research-agent-service"
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://localhost:4317"
+
     SEARCH_TIMEOUT_SECONDS: float = 20.0
 
     LLM_TIMEOUT_SECONDS: float = 30.0
