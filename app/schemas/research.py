@@ -35,3 +35,4 @@ class ResearchResponse(BaseModel):
     evidence_strength: str
     evidence_warning: str | None = None
     sources: list[SourceResult]
+    processing_time_ms: float | None = None
