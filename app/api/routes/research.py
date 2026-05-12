@@ -6,6 +6,13 @@ from app.core.tracing import get_tracer
 from app.graph.workflow import build_research_graph
 from app.schemas.research import ResearchRequest, ResearchResponse, SourceResult
 
+from app.core.metrics import (
+    RESEARCH_REQUEST_COUNT,
+    RESEARCH_SOURCE_COUNT,
+    RESEARCH_FAILED_SOURCE_COUNT,
+
+)
+
 router = APIRouter(prefix="/research", tags=["research"])
 
 research_graph = build_research_graph()
@@ -63,6 +70,14 @@ async def research(
         )
         for source in result["sources"]
     ]
+
+    RESEARCH_REQUEST_COUNT.labels(
+        summary_mode=result["summary_mode"],
+        evidence_strength=result.get("evidence_strength", "none"),
+    ).inc()
+
+    RESEARCH_SOURCE_COUNT.observe(source_count)
+    RESEARCH_FAILED_SOURCE_COUNT.observe(failed_source_count)
 
     return ResearchResponse(
         trace_id=trace_id,
