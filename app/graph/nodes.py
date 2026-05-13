@@ -14,6 +14,26 @@ from app.summarization.guardrails import assess_evidence_strength
 from app.agent.sufficiency import check_source_sufficiency
 from app.agent.conflict_detector import detect_source_conflicts
 from app.agent.reflection import reflect_on_research_quality
+from app.agent.followup import generate_follow_up_question
+
+
+
+
+def generate_follow_up(state: ResearchState) -> dict:
+    question = generate_follow_up_question(
+        query=state["query"],
+        research_reflection=state.get("research_reflection", {}),
+        source_sufficiency=state.get("source_sufficiency", {}),
+    )
+
+    logger.info(
+        "follow_up_question_generated",
+        has_follow_up=question is not None,
+    )
+
+    return {
+        "follow_up_question": question
+    }
 
 
 

@@ -39,3 +39,4 @@ class ResearchState(TypedDict):
     source_sufficiency: dict
     source_conflicts: dict
     research_reflection: dict
+    follow_up_question: str | None

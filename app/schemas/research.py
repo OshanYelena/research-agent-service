@@ -40,3 +40,4 @@ class ResearchResponse(BaseModel):
     source_sufficiency: dict
     source_conflicts: dict
     research_reflection: dict
+    follow_up_question: str | None = None
