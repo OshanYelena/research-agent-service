@@ -13,7 +13,6 @@ class SourceState(TypedDict, total=False):
     extraction_quality_score: float | None
     content_relevance_score: float | None
     citation_id: int | None
-    research_plan: dict
 
 
 
@@ -31,3 +30,4 @@ class ResearchState(TypedDict):
 
     evidence_strength: str
     evidence_warning: str | None
+    research_plan: dict
