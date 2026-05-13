@@ -39,3 +39,4 @@ class ResearchResponse(BaseModel):
     research_plan: dict
     source_sufficiency: dict
     source_conflicts: dict
+    research_reflection: dict

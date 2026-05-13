@@ -13,7 +13,26 @@ from app.agent.planner import create_research_plan
 from app.summarization.guardrails import assess_evidence_strength
 from app.agent.sufficiency import check_source_sufficiency
 from app.agent.conflict_detector import detect_source_conflicts
+from app.agent.reflection import reflect_on_research_quality
 
+
+
+def reflect_on_results(state: ResearchState) -> dict:
+    reflection = reflect_on_research_quality(
+        evidence_strength=state.get("evidence_strength", "none"),
+        source_sufficiency=state.get("source_sufficiency", {}),
+        source_conflicts=state.get("source_conflicts", {}),
+    )
+
+    logger.info(
+        "research_reflection_completed",
+        confidence=reflection["confidence"],
+        decision=reflection["decision"],
+    )
+
+    return {
+        "research_reflection": reflection
+    }
 
 
 def create_search_plan(state: ResearchState) -> dict:

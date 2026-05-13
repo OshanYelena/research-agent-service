@@ -46,6 +46,7 @@ async def research(
                 "source_sufficiency": {},
                 "should_continue_search": False,
                 "source_conflicts": {},
+                "research_reflection": {},
             }
         )
 
@@ -100,4 +101,5 @@ async def research(
         research_plan=result.get("research_plan", {}),
         source_sufficiency=result.get("source_sufficiency", {}),
         source_conflicts=result.get("source_conflicts", {}),
+        research_reflection=result.get("research_reflection", {}),
     )
