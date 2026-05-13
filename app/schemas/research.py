@@ -37,3 +37,4 @@ class ResearchResponse(BaseModel):
     sources: list[SourceResult]
     processing_time_ms: float | None = None
     research_plan: dict
+    source_sufficiency: dict

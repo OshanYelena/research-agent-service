@@ -11,7 +11,7 @@ from app.search.service import SearchService
 from app.summarization.service import SummarizationService
 from app.agent.planner import create_research_plan
 from app.summarization.guardrails import assess_evidence_strength
-
+from app.agent.sufficiency import check_source_sufficiency
 
 def create_search_plan(state: ResearchState) -> dict:
 
@@ -167,15 +167,21 @@ async def summarize_sources(state: ResearchState) -> dict:
         for source in state["sources"]
         if source.get("url") not in ranked_urls
     ]
+    all_sources = ranked_sources + failed_or_unused_sources
+
+    source_sufficiency = check_source_sufficiency(
+        research_plan=state.get("research_plan", {}),
+        sources=all_sources,
+    )
 
     return {
         "summary": summary,
         "summary_mode": summary_mode,
-        "sources": ranked_sources + failed_or_unused_sources,
+        "sources": all_sources,
         "evidence_strength": evidence_strength,
         "evidence_warning": evidence_warning,
+        "source_sufficiency": source_sufficiency,
     }
-
 
 async def discover_urls(state: ResearchState) -> dict:
     if state["urls"]:
@@ -226,19 +232,25 @@ def plan_research(state: ResearchState) -> dict:
 def assess_search_progress(state: ResearchState) -> dict:
     evidence_strength, evidence_warning = assess_evidence_strength(state["sources"])
 
+    source_sufficiency = check_source_sufficiency(
+        research_plan=state.get("research_plan", {}),
+        sources=state["sources"],
+    )
+
     iteration_count = state.get("iteration_count", 0)
     max_iterations = state.get("max_iterations", 2)
 
     should_continue = (
-        evidence_strength in {"none", "weak"}
+        not source_sufficiency["is_sufficient"]
         and iteration_count < max_iterations
-        and not state["urls"]  # only loop for query-based search, not direct URL mode
+        and not state["urls"]
     )
 
     logger.info(
         "search_progress_assessed",
         evidence_strength=evidence_strength,
         evidence_warning=evidence_warning,
+        source_sufficiency=source_sufficiency,
         iteration_count=iteration_count,
         max_iterations=max_iterations,
         should_continue_search=should_continue,
@@ -247,6 +259,7 @@ def assess_search_progress(state: ResearchState) -> dict:
     return {
         "evidence_strength": evidence_strength,
         "evidence_warning": evidence_warning,
+        "source_sufficiency": source_sufficiency,
         "should_continue_search": should_continue,
     }
 

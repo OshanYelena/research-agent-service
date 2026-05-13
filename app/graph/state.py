@@ -36,3 +36,4 @@ class ResearchState(TypedDict):
     max_iterations: int
 
     should_continue_search: bool
+    source_sufficiency: dict

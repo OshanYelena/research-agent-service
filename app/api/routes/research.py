@@ -43,6 +43,7 @@ async def research(
                 "research_plan": {},
                 "iteration_count": 0,
                 "max_iterations": 2,
+                "source_sufficiency": {},
                 "should_continue_search": False,
             }
         )
@@ -96,4 +97,5 @@ async def research(
         sources=sources,
         processing_time_ms=None,
         research_plan=result.get("research_plan", {}),
+        source_sufficiency=result.get("source_sufficiency", {}),
     )
