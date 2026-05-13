@@ -167,20 +167,26 @@ async def discover_urls(state: ResearchState) -> dict:
         }
 
     logger.info(
-        "discovering_urls_from_query",
+        "discovering_urls_from_research_plan",
         query=state["query"],
     )
 
     search_service = SearchService()
 
+    research_plan = state.get("research_plan", {})
+    search_queries = research_plan.get("search_queries") or None
+
     urls = await search_service.discover_urls(
         query=state["query"],
         max_results=settings.SEARCH_MAX_RESULTS,
+        search_queries=search_queries,
     )
 
     return {
         "discovered_urls": urls
     }
+
+
 
 def plan_research(state: ResearchState) -> dict:
     plan = create_research_plan(state["query"])
