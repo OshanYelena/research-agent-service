@@ -38,3 +38,4 @@ class ResearchResponse(BaseModel):
     processing_time_ms: float | None = None
     research_plan: dict
     source_sufficiency: dict
+    source_conflicts: dict

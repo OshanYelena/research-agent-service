@@ -37,3 +37,4 @@ class ResearchState(TypedDict):
 
     should_continue_search: bool
     source_sufficiency: dict
+    source_conflicts: dict

@@ -12,6 +12,9 @@ from app.summarization.service import SummarizationService
 from app.agent.planner import create_research_plan
 from app.summarization.guardrails import assess_evidence_strength
 from app.agent.sufficiency import check_source_sufficiency
+from app.agent.conflict_detector import detect_source_conflicts
+
+
 
 def create_search_plan(state: ResearchState) -> dict:
 
@@ -168,6 +171,7 @@ async def summarize_sources(state: ResearchState) -> dict:
         if source.get("url") not in ranked_urls
     ]
     all_sources = ranked_sources + failed_or_unused_sources
+    source_conflicts = detect_source_conflicts(all_sources)
 
     source_sufficiency = check_source_sufficiency(
         research_plan=state.get("research_plan", {}),
@@ -181,6 +185,7 @@ async def summarize_sources(state: ResearchState) -> dict:
         "evidence_strength": evidence_strength,
         "evidence_warning": evidence_warning,
         "source_sufficiency": source_sufficiency,
+        "source_conflicts": source_conflicts,
     }
 
 async def discover_urls(state: ResearchState) -> dict:
