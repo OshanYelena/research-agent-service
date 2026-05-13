@@ -40,6 +40,7 @@ async def research(
                 "discovered_urls": [],
                 "evidence_strength": "none",
                 "evidence_warning": None,
+                "research_plan": {},
             }
         )
 
@@ -91,4 +92,5 @@ async def research(
         failed_source_count=failed_source_count,
         sources=sources,
         processing_time_ms=None,
+        research_plan=result.get("research_plan", {}),
     )

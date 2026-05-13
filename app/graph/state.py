@@ -13,6 +13,7 @@ class SourceState(TypedDict, total=False):
     extraction_quality_score: float | None
     content_relevance_score: float | None
     citation_id: int | None
+    research_plan: dict
 
 
 

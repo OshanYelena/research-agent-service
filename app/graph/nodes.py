@@ -9,7 +9,7 @@ from app.crawler.summarizer import summarize_text_preview
 from app.crawler.url_safety import deduplicate_urls, is_url_allowed
 from app.search.service import SearchService
 from app.summarization.service import SummarizationService
-
+from app.agent.planner import create_research_plan
 
 
 
@@ -180,4 +180,19 @@ async def discover_urls(state: ResearchState) -> dict:
 
     return {
         "discovered_urls": urls
+    }
+
+def plan_research(state: ResearchState) -> dict:
+    plan = create_research_plan(state["query"])
+
+    logger.info(
+        "research_plan_created",
+        intent=plan.intent,
+        research_depth=plan.research_depth,
+        needs_freshness=plan.needs_freshness,
+        search_query_count=len(plan.search_queries),
+    )
+
+    return {
+        "research_plan": plan.model_dump()
     }
