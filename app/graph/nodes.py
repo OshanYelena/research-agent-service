@@ -10,7 +10,7 @@ from app.crawler.url_safety import deduplicate_urls, is_url_allowed
 from app.search.service import SearchService
 from app.summarization.service import SummarizationService
 from app.agent.planner import create_research_plan
-
+from app.summarization.guardrails import assess_evidence_strength
 
 
 def create_search_plan(state: ResearchState) -> dict:
@@ -79,8 +79,21 @@ async def _crawl_single_url(
 async def crawl_urls(state: ResearchState) -> dict:
     urls = deduplicate_urls(state["discovered_urls"])
 
+    already_crawled_urls = {
+        source.get("url")
+        for source in state.get("sources", [])
+    }
+
+    urls = [
+        url
+        for url in urls
+        if url not in already_crawled_urls
+    ]
+
     if not urls:
-        return {"sources": []}
+        return {
+            "sources": state.get("sources", [])
+        }
 
     safe_urls = []
     blocked_sources = []
@@ -122,8 +135,12 @@ async def crawl_urls(state: ResearchState) -> dict:
 
         crawled_sources = await asyncio.gather(*tasks)
 
+    existing_sources = state.get("sources", [])
+
     return {
-        "sources": blocked_sources + crawled_sources
+
+        "sources": existing_sources + blocked_sources + crawled_sources
+
     }
 
 
@@ -182,8 +199,11 @@ async def discover_urls(state: ResearchState) -> dict:
         search_queries=search_queries,
     )
 
+    existing_urls = state.get("discovered_urls", [])
+    merged_urls = list(dict.fromkeys(existing_urls + urls))
+
     return {
-        "discovered_urls": urls
+        "discovered_urls": merged_urls
     }
 
 
@@ -201,4 +221,64 @@ def plan_research(state: ResearchState) -> dict:
 
     return {
         "research_plan": plan.model_dump()
+    }
+
+def assess_search_progress(state: ResearchState) -> dict:
+    evidence_strength, evidence_warning = assess_evidence_strength(state["sources"])
+
+    iteration_count = state.get("iteration_count", 0)
+    max_iterations = state.get("max_iterations", 2)
+
+    should_continue = (
+        evidence_strength in {"none", "weak"}
+        and iteration_count < max_iterations
+        and not state["urls"]  # only loop for query-based search, not direct URL mode
+    )
+
+    logger.info(
+        "search_progress_assessed",
+        evidence_strength=evidence_strength,
+        evidence_warning=evidence_warning,
+        iteration_count=iteration_count,
+        max_iterations=max_iterations,
+        should_continue_search=should_continue,
+    )
+
+    return {
+        "evidence_strength": evidence_strength,
+        "evidence_warning": evidence_warning,
+        "should_continue_search": should_continue,
+    }
+
+def refine_research_plan(state: ResearchState) -> dict:
+    research_plan = state.get("research_plan", {})
+    original_query = state["query"]
+    iteration_count = state.get("iteration_count", 0) + 1
+
+    existing_queries = research_plan.get("search_queries", [])
+
+    refined_queries = [
+        f"{original_query} detailed comparison",
+        f"{original_query} official documentation",
+        f"{original_query} production use cases",
+        f"{original_query} open source frameworks",
+    ]
+
+    merged_queries = list(dict.fromkeys(existing_queries + refined_queries))
+
+    updated_plan = {
+        **research_plan,
+        "search_queries": merged_queries,
+        "research_depth": "deepened",
+    }
+
+    logger.info(
+        "research_plan_refined",
+        iteration_count=iteration_count,
+        search_query_count=len(merged_queries),
+    )
+
+    return {
+        "research_plan": updated_plan,
+        "iteration_count": iteration_count,
     }

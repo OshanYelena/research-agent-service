@@ -41,6 +41,9 @@ async def research(
                 "evidence_strength": "none",
                 "evidence_warning": None,
                 "research_plan": {},
+                "iteration_count": 0,
+                "max_iterations": 2,
+                "should_continue_search": False,
             }
         )
 
