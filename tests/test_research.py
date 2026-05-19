@@ -19,6 +19,8 @@ def test_research_endpoint_with_url():
     data = response.json()
 
     assert data["query"] == "summarize this article"
+    assert "x-trace-id" in response.headers
+    assert "x-processing-time-ms" in response.headers
     assert "summary" in data
     assert "sources" in data
     assert "trace_id" in data

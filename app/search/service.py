@@ -16,12 +16,13 @@ class SearchService:
         self.providers = providers or [SerperSearchProvider()]
 
     async def discover_results(
-        self,
-        query: str,
-        max_results: int | None = None,
+            self,
+            query: str,
+            max_results: int | None = None,
+            search_queries: list[str] | None = None,
     ) -> list[SearchResult]:
         max_results = max_results or settings.SEARCH_MAX_RESULTS
-        expanded_queries = expand_query(query)
+        expanded_queries = search_queries or expand_query(query)
 
         logger.info(
             "discovering_search_results",
@@ -71,13 +72,15 @@ class SearchService:
         return ranked_results[:max_results]
 
     async def discover_urls(
-        self,
-        query: str,
-        max_results: int | None = None,
+            self,
+            query: str,
+            max_results: int | None = None,
+            search_queries: list[str] | None = None,
     ) -> list[str]:
         results = await self.discover_results(
             query=query,
             max_results=max_results,
+            search_queries=search_queries,
         )
 
         return extract_urls_from_results(results)

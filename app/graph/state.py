@@ -30,3 +30,13 @@ class ResearchState(TypedDict):
 
     evidence_strength: str
     evidence_warning: str | None
+    research_plan: dict
+    iteration_count: int
+
+    max_iterations: int
+
+    should_continue_search: bool
+    source_sufficiency: dict
+    source_conflicts: dict
+    research_reflection: dict
+    follow_up_question: str | None

@@ -26,10 +26,41 @@ class Settings(BaseSettings):
 
     SERPER_API_KEY: str | None = None
 
+    OTEL_ENABLED: bool = True
+    OTEL_SERVICE_NAME: str = "research-agent-service"
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://localhost:4317"
+
     SEARCH_TIMEOUT_SECONDS: float = 20.0
 
     LLM_TIMEOUT_SECONDS: float = 30.0
     LLM_MAX_RETRIES: int = 2
+
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REQUESTS: int = 10
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+
+    REQUEST_TIMEOUT_SECONDS: float = 45.0
+
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+    ALLOWED_HOSTS: str = "localhost,127.0.0.1"
+    ENABLE_DOCS: bool = True
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        return [
+            origin.strip()
+            for origin in self.ALLOWED_ORIGINS.split(",")
+            if origin.strip()
+        ]
+
+    @property
+    def allowed_hosts(self) -> list[str]:
+        return [
+            host.strip()
+            for host in self.ALLOWED_HOSTS.split(",")
+            if host.strip()
+        ]
+
 
     @property
     def blocked_domains(self) -> set[str]:

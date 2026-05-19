@@ -6,6 +6,20 @@ from app.api.routes.health import router as health_router
 from app.api.routes.research import router as research_router
 from app.core.config import settings
 from app.core.logging import configure_logging, logger
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from app.core.middleware import RequestMetadataMiddleware
+from app.core.tracing import configure_tracing
+from app.api.routes.metrics import router as metrics_router
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from app.core.exceptions import AppError
+from app.core.error_handlers import (
+    app_error_handler,
+    http_exception_handler,
+    validation_exception_handler,
+    unhandled_exception_handler,
+)
 
 
 @asynccontextmanager
@@ -27,7 +41,32 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     lifespan=lifespan,
+    docs_url="/docs" if settings.ENABLE_DOCS else None,
+    redoc_url="/redoc" if settings.ENABLE_DOCS else None,
+    openapi_url="/openapi.json" if settings.ENABLE_DOCS else None,
 )
 
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.allowed_hosts,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
+)
+
+app.add_middleware(RequestMetadataMiddleware)
+app.add_exception_handler(AppError, app_error_handler)
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
+
+configure_tracing(app)
+
 app.include_router(health_router)
+app.include_router(metrics_router)
 app.include_router(research_router)

@@ -9,8 +9,50 @@ from app.crawler.summarizer import summarize_text_preview
 from app.crawler.url_safety import deduplicate_urls, is_url_allowed
 from app.search.service import SearchService
 from app.summarization.service import SummarizationService
+from app.agent.planner import create_research_plan
+from app.summarization.guardrails import assess_evidence_strength
+from app.agent.sufficiency import check_source_sufficiency
+from app.agent.conflict_detector import detect_source_conflicts
+from app.agent.reflection import reflect_on_research_quality
+from app.agent.followup import generate_follow_up_question
 
 
+
+
+def generate_follow_up(state: ResearchState) -> dict:
+    question = generate_follow_up_question(
+        query=state["query"],
+        research_reflection=state.get("research_reflection", {}),
+        source_sufficiency=state.get("source_sufficiency", {}),
+    )
+
+    logger.info(
+        "follow_up_question_generated",
+        has_follow_up=question is not None,
+    )
+
+    return {
+        "follow_up_question": question
+    }
+
+
+
+def reflect_on_results(state: ResearchState) -> dict:
+    reflection = reflect_on_research_quality(
+        evidence_strength=state.get("evidence_strength", "none"),
+        source_sufficiency=state.get("source_sufficiency", {}),
+        source_conflicts=state.get("source_conflicts", {}),
+    )
+
+    logger.info(
+        "research_reflection_completed",
+        confidence=reflection["confidence"],
+        decision=reflection["decision"],
+    )
+
+    return {
+        "research_reflection": reflection
+    }
 
 
 def create_search_plan(state: ResearchState) -> dict:
@@ -79,8 +121,21 @@ async def _crawl_single_url(
 async def crawl_urls(state: ResearchState) -> dict:
     urls = deduplicate_urls(state["discovered_urls"])
 
+    already_crawled_urls = {
+        source.get("url")
+        for source in state.get("sources", [])
+    }
+
+    urls = [
+        url
+        for url in urls
+        if url not in already_crawled_urls
+    ]
+
     if not urls:
-        return {"sources": []}
+        return {
+            "sources": state.get("sources", [])
+        }
 
     safe_urls = []
     blocked_sources = []
@@ -122,8 +177,12 @@ async def crawl_urls(state: ResearchState) -> dict:
 
         crawled_sources = await asyncio.gather(*tasks)
 
+    existing_sources = state.get("sources", [])
+
     return {
-        "sources": blocked_sources + crawled_sources
+
+        "sources": existing_sources + blocked_sources + crawled_sources
+
     }
 
 
@@ -150,15 +209,23 @@ async def summarize_sources(state: ResearchState) -> dict:
         for source in state["sources"]
         if source.get("url") not in ranked_urls
     ]
+    all_sources = ranked_sources + failed_or_unused_sources
+    source_conflicts = detect_source_conflicts(all_sources)
+
+    source_sufficiency = check_source_sufficiency(
+        research_plan=state.get("research_plan", {}),
+        sources=all_sources,
+    )
 
     return {
         "summary": summary,
         "summary_mode": summary_mode,
-        "sources": ranked_sources + failed_or_unused_sources,
+        "sources": all_sources,
         "evidence_strength": evidence_strength,
         "evidence_warning": evidence_warning,
+        "source_sufficiency": source_sufficiency,
+        "source_conflicts": source_conflicts,
     }
-
 
 async def discover_urls(state: ResearchState) -> dict:
     if state["urls"]:
@@ -167,17 +234,108 @@ async def discover_urls(state: ResearchState) -> dict:
         }
 
     logger.info(
-        "discovering_urls_from_query",
+        "discovering_urls_from_research_plan",
         query=state["query"],
     )
 
     search_service = SearchService()
 
+    research_plan = state.get("research_plan", {})
+    search_queries = research_plan.get("search_queries") or None
+
     urls = await search_service.discover_urls(
         query=state["query"],
         max_results=settings.SEARCH_MAX_RESULTS,
+        search_queries=search_queries,
+    )
+
+    existing_urls = state.get("discovered_urls", [])
+    merged_urls = list(dict.fromkeys(existing_urls + urls))
+
+    return {
+        "discovered_urls": merged_urls
+    }
+
+
+
+def plan_research(state: ResearchState) -> dict:
+    plan = create_research_plan(state["query"])
+
+    logger.info(
+        "research_plan_created",
+        intent=plan.intent,
+        research_depth=plan.research_depth,
+        needs_freshness=plan.needs_freshness,
+        search_query_count=len(plan.search_queries),
     )
 
     return {
-        "discovered_urls": urls
+        "research_plan": plan.model_dump()
+    }
+
+def assess_search_progress(state: ResearchState) -> dict:
+    evidence_strength, evidence_warning = assess_evidence_strength(state["sources"])
+
+    source_sufficiency = check_source_sufficiency(
+        research_plan=state.get("research_plan", {}),
+        sources=state["sources"],
+    )
+
+    iteration_count = state.get("iteration_count", 0)
+    max_iterations = state.get("max_iterations", 2)
+
+    should_continue = (
+        not source_sufficiency["is_sufficient"]
+        and iteration_count < max_iterations
+        and not state["urls"]
+    )
+
+    logger.info(
+        "search_progress_assessed",
+        evidence_strength=evidence_strength,
+        evidence_warning=evidence_warning,
+        source_sufficiency=source_sufficiency,
+        iteration_count=iteration_count,
+        max_iterations=max_iterations,
+        should_continue_search=should_continue,
+    )
+
+    return {
+        "evidence_strength": evidence_strength,
+        "evidence_warning": evidence_warning,
+        "source_sufficiency": source_sufficiency,
+        "should_continue_search": should_continue,
+    }
+
+def refine_research_plan(state: ResearchState) -> dict:
+    research_plan = state.get("research_plan", {})
+    original_query = state["query"]
+    iteration_count = state.get("iteration_count", 0) + 1
+
+    existing_queries = research_plan.get("search_queries", [])
+
+    refined_queries = [
+        f"{original_query} detailed comparison",
+        f"{original_query} official documentation",
+        f"{original_query} production use cases",
+        f"{original_query} open source frameworks",
+    ]
+
+    merged_queries = list(dict.fromkeys(existing_queries + refined_queries))
+
+    updated_plan = {
+        **research_plan,
+        "search_queries": merged_queries,
+        "research_depth": "deepened",
+    }
+
+    logger.info(
+        "research_plan_refined",
+        iteration_count=iteration_count,
+        search_query_count=len(merged_queries),
+    )
+
+    return {
+        "research_plan": updated_plan,
+        "iteration_count": iteration_count,
     }
